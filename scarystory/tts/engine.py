@@ -1,8 +1,6 @@
 """Text-to-Speech engine with multiple provider support."""
 
-import io
 import logging
-import struct
 import wave
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -137,12 +135,15 @@ class BarkTTSProvider(TTSProvider):
 
     def __init__(self, config: dict[str, Any]):
         self.sample_rate = config.get("tts", {}).get("sample_rate", 22050)
+        self._models_loaded = False
 
     def synthesize(self, text: str, output_path: str) -> float:
         from bark import SAMPLE_RATE, generate_audio, preload_models
         from scipy.io.wavfile import write as write_wav
 
-        preload_models()
+        if not self._models_loaded:
+            preload_models()
+            self._models_loaded = True
         audio_array = generate_audio(text)
 
         # Write WAV first
@@ -246,6 +247,56 @@ class TTSEngine:
         """Synthesize a single text to an audio file. Returns duration."""
         Path(output_path).parent.mkdir(parents=True, exist_ok=True)
         return self.provider.synthesize(text, output_path)
+
+    @staticmethod
+    def concatenate_audio(
+        file_paths: list[str],
+        output_path: str,
+        pause_ms: int = 1000,
+    ) -> float:
+        """Concatenate multiple audio files into a single file with pauses between.
+
+        Args:
+            file_paths: Ordered list of audio file paths to merge.
+            output_path: Path for the merged output file.
+            pause_ms: Milliseconds of silence between segments.
+
+        Returns:
+            Total duration in seconds.
+        """
+        try:
+            from pydub import AudioSegment
+        except ImportError:
+            logger.error(
+                "pydub is required for audio concatenation. "
+                "Install with: pip install pydub"
+            )
+            raise
+
+        if not file_paths:
+            raise ValueError("No audio files provided for concatenation")
+
+        combined = AudioSegment.empty()
+        silence = AudioSegment.silent(duration=pause_ms)
+
+        for i, path in enumerate(file_paths):
+            segment = AudioSegment.from_file(path)
+            combined += segment
+            if i < len(file_paths) - 1:
+                combined += silence
+
+        Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+        out_format = Path(output_path).suffix.lstrip(".")
+        combined.export(output_path, format=out_format or "mp3")
+
+        duration = len(combined) / 1000.0
+        logger.info(
+            "Concatenated %d files -> %s (%.1f seconds)",
+            len(file_paths),
+            output_path,
+            duration,
+        )
+        return duration
 
 
 def _get_audio_duration(file_path: str) -> float:

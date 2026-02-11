@@ -14,7 +14,21 @@ Reddit Story Scraper to Audio Converter for faceless YouTube video production.
 
 ## Quick Start
 
-### 1. Install
+### 1. Install System Dependencies
+
+**FFmpeg** is required for audio format conversion and concatenation:
+
+```bash
+# Ubuntu/Debian
+sudo apt-get install ffmpeg
+
+# macOS
+brew install ffmpeg
+
+# Windows - download from https://ffmpeg.org/download.html
+```
+
+### 2. Install Python Packages
 
 ```bash
 python -m venv venv
@@ -34,7 +48,7 @@ pip install elevenlabs
 pip install bark scipy
 ```
 
-### 2. Configure
+### 3. Configure
 
 ```bash
 cp config.yaml config.local.yaml
@@ -56,7 +70,7 @@ export REDDIT_CLIENT_ID="your_client_id"
 export REDDIT_CLIENT_SECRET="your_client_secret"
 ```
 
-### 3. Run
+### 4. Run
 
 ```bash
 # Scrape top stories from this week
@@ -114,6 +128,7 @@ output/
       chunks/
         chunk_000.txt     # Text chunks for TTS
         chunk_001.txt
+      full_story.mp3        # Combined audio (all chunks merged)
       audio/
         <story-id>_part000.mp3
         <story-id>_part001.mp3

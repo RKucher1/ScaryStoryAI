@@ -169,6 +169,7 @@ def _cmd_scrape(config: dict, args: argparse.Namespace) -> None:
         else:
             groups = None
 
+        print("Scraping stories from Reddit...")
         stories = pipeline.run_scrape(
             sort=args.sort,
             time_filter=args.time,
@@ -188,6 +189,7 @@ def _cmd_scrape(config: dict, args: argparse.Namespace) -> None:
 def _cmd_process(config: dict, args: argparse.Namespace) -> None:
     """Handle the process command."""
     with StoryPipeline(config) as pipeline:
+        print("Processing stories...")
         results = pipeline.run_process(limit=args.limit)
         print(f"\nProcessed {len(results)} stories:")
         for r in results:
@@ -197,6 +199,7 @@ def _cmd_process(config: dict, args: argparse.Namespace) -> None:
 def _cmd_audio(config: dict, args: argparse.Namespace) -> None:
     """Handle the audio command."""
     with StoryPipeline(config) as pipeline:
+        print("Generating audio (this may take a while)...")
         results = pipeline.run_generate_audio(limit=args.limit)
         print(f"\nGenerated audio for {len(results)} stories:")
         for r in results:
@@ -209,6 +212,7 @@ def _cmd_audio(config: dict, args: argparse.Namespace) -> None:
 def _cmd_run(config: dict, args: argparse.Namespace) -> None:
     """Handle the full pipeline run command."""
     with StoryPipeline(config) as pipeline:
+        print("Running full pipeline (scrape -> process -> audio)...")
         result = pipeline.run_full_pipeline(sort=args.sort, time_filter=args.time)
         print("\nPipeline Results:")
         print(f"  Stories scraped: {result['new_stories_scraped']}")

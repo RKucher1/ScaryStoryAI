@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from scarystory.database.store import StoryDatabase
+from scarystory.processor.content_filter import ContentFilter
 from scarystory.processor.text_cleaner import TextCleaner
 from scarystory.scraper.reddit_scraper import RedditScraper
 from scarystory.scraper.scorer import StoryScorer
@@ -23,7 +24,11 @@ class StoryPipeline:
         self.scraper = RedditScraper(config)
         self.scorer = StoryScorer(config)
         self.cleaner = TextCleaner(config)
+        self.content_filter = ContentFilter(config)
         self.tts = TTSEngine(config)
+        self.chunk_pause_ms = int(
+            config.get("processing", {}).get("chunk_pause", 1.0) * 1000
+        )
 
         output_config = config.get("output", {})
         self.output_base = Path(output_config.get("base_dir", "output"))
@@ -51,6 +56,10 @@ class StoryPipeline:
             if total_scraped >= self.max_per_run:
                 logger.info("Reached max stories per run (%d)", self.max_per_run)
                 break
+
+            # Content safety filter
+            if not self.content_filter.is_safe(story):
+                continue
 
             # Score and categorize
             story = self.scorer.score_story(story)
@@ -226,6 +235,25 @@ class StoryPipeline:
 
         total_duration = sum(r["duration"] for r in audio_results)
 
+        # Concatenate all chunks into a single audio file
+        combined_path = None
+        if len(audio_results) > 1:
+            fmt = self.config.get("tts", {}).get("output_format", "mp3")
+            combined_path = str(story_dir / f"full_story.{fmt}")
+            chunk_paths = [r["file_path"] for r in audio_results]
+            try:
+                total_duration = TTSEngine.concatenate_audio(
+                    chunk_paths, combined_path, pause_ms=self.chunk_pause_ms
+                )
+            except Exception:
+                logger.warning(
+                    "Could not concatenate audio chunks (missing ffmpeg?). "
+                    "Individual chunk files are still available."
+                )
+                combined_path = None
+        elif len(audio_results) == 1:
+            combined_path = audio_results[0]["file_path"]
+
         # Record in database
         for result in audio_results:
             self.db.insert_audio_record(
@@ -243,6 +271,7 @@ class StoryPipeline:
                 "total_duration_seconds": round(total_duration, 1),
                 "num_parts": len(audio_results),
                 "format": self.config.get("tts", {}).get("output_format", "mp3"),
+                "combined_file": combined_path,
             }
             metadata_path.write_text(json.dumps(metadata, indent=2))
 

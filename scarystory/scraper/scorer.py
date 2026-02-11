@@ -130,7 +130,7 @@ class StoryScorer:
         paragraphs = [p.strip() for p in body.split("\n\n") if p.strip()]
         if len(paragraphs) >= 5:
             lengths = [len(p) for p in paragraphs]
-            avg_len = sum(lengths) / len(lengths)
+            avg_len = sum(lengths) / len(lengths) if lengths else 0
             if avg_len > 0:
                 variance = sum((l - avg_len) ** 2 for l in lengths) / len(lengths)
                 # Very low variance in paragraph lengths is suspicious

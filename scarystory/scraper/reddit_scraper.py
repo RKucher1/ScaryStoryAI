@@ -5,9 +5,13 @@ import time
 from typing import Any, Generator
 
 import praw
+import prawcore.exceptions
 from praw.models import Submission
 
 logger = logging.getLogger(__name__)
+
+MAX_RETRIES = 3
+RETRY_BACKOFF = [5, 15, 30]  # seconds
 
 
 class RedditScraper:
@@ -67,7 +71,7 @@ class RedditScraper:
         }.get(sort, lambda: subreddit.top(time_filter=time_filter, limit=limit))
 
         count = 0
-        for submission in fetch_method():
+        for submission in self._fetch_with_retry(fetch_method):
             story = self._extract_story(submission, subreddit_name)
             if story and self._passes_filters(story):
                 count += 1
@@ -77,6 +81,36 @@ class RedditScraper:
             time.sleep(self.rate_limit_delay)
 
         logger.info("Scraped %d stories from r/%s", count, subreddit_name)
+
+    @staticmethod
+    def _fetch_with_retry(fetch_method) -> Generator:
+        """Wrap a PRAW fetch call with retry logic for transient failures."""
+        for attempt in range(MAX_RETRIES + 1):
+            try:
+                yield from fetch_method()
+                return
+            except (
+                prawcore.exceptions.ServerError,
+                prawcore.exceptions.RequestException,
+                prawcore.exceptions.ResponseException,
+            ) as e:
+                if attempt < MAX_RETRIES:
+                    delay = RETRY_BACKOFF[attempt]
+                    logger.warning(
+                        "Reddit API error (attempt %d/%d), retrying in %ds: %s",
+                        attempt + 1,
+                        MAX_RETRIES,
+                        delay,
+                        e,
+                    )
+                    time.sleep(delay)
+                else:
+                    logger.error(
+                        "Reddit API error after %d retries: %s",
+                        MAX_RETRIES,
+                        e,
+                    )
+                    raise
 
     def scrape_multiple_subreddits(
         self,
