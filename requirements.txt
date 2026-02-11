@@ -1,0 +1,20 @@
+# Core dependencies
+praw>=7.7.0
+pyyaml>=6.0
+
+# Text-to-Speech (install one or more providers)
+# Coqui TTS - free, local (recommended for getting started)
+TTS>=0.22.0
+
+# ElevenLabs - cloud API, high quality (optional, requires API key)
+# elevenlabs>=1.0.0
+
+# Bark - free, local, expressive (optional, requires GPU)
+# bark>=0.1.0
+# scipy>=1.11.0
+
+# Audio processing
+pydub>=0.25.1
+
+# Development/Testing
+pytest>=7.4.0

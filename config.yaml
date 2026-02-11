@@ -1,0 +1,135 @@
+# ScaryStoryAI Configuration
+# Copy this file to config.local.yaml and fill in your credentials
+
+reddit:
+  client_id: "YOUR_REDDIT_CLIENT_ID"
+  client_secret: "YOUR_REDDIT_CLIENT_SECRET"
+  user_agent: "ScaryStoryAI/1.0 (by /u/YOUR_USERNAME)"
+  username: ""
+  password: ""
+
+# Subreddits to scrape, grouped by theme
+subreddits:
+  horror:
+    - "LetsNotMeet"
+    - "nosleep"
+    - "creepyencounters"
+    - "Glitch_in_the_Matrix"
+    - "TrueScaryStories"
+    - "thetruthishere"
+    - "shortscarystories"
+  true_crime:
+    - "UnresolvedMysteries"
+    - "TrueCrime"
+  paranormal:
+    - "Paranormal"
+    - "Ghoststories"
+
+# Topic category keywords for filtering and classification
+categories:
+  after_school:
+    keywords: ["after school", "walking home", "school bus", "picked up", "playground", "recess", "detention", "afterschool"]
+    weight: 1.5
+  stranger_danger:
+    keywords: ["stranger", "followed me", "following me", "stalker", "stalked", "creepy man", "creepy woman", "van", "kidnap", "abduct"]
+    weight: 1.8
+  church_religious:
+    keywords: ["church", "pastor", "priest", "youth group", "sunday school", "religious", "congregation", "chapel", "bible study"]
+    weight: 1.4
+  workplace_horror:
+    keywords: ["work", "coworker", "boss", "office", "night shift", "closing shift", "warehouse", "factory", "workplace"]
+    weight: 1.3
+  delivery_on_the_job:
+    keywords: ["delivery", "pizza delivery", "uber", "lyft", "rideshare", "doordash", "customer", "route", "on the job"]
+    weight: 1.4
+  conspiracy_kids:
+    keywords: ["missing children", "trafficking", "conspiracy", "cover up", "neighborhood", "disappeared", "teens", "youth"]
+    weight: 1.6
+  unusual_places:
+    keywords: ["abandoned", "urban exploring", "cave", "tunnel", "basement", "attic", "woods", "forest", "cemetery", "graveyard", "old house"]
+    weight: 1.5
+
+# Scoring configuration
+scoring:
+  # Minimum thresholds for consideration
+  min_upvotes: 50
+  min_body_length: 500
+  max_body_length: 30000
+  # Weight multipliers for engagement metrics
+  upvote_weight: 1.0
+  comment_weight: 1.5
+  award_weight: 2.0
+  # Bonus for stories that match category keywords
+  category_match_bonus: 10.0
+  # Penalty for likely AI-generated content
+  ai_penalty: -50.0
+  # Freshness scoring (stories < 7 days old get a boost)
+  freshness_days: 7
+  freshness_bonus: 5.0
+
+# Story processing settings
+processing:
+  # Max words per TTS chunk (for long stories)
+  chunk_max_words: 800
+  # Pause duration in seconds between chunks
+  chunk_pause: 1.0
+  # Remove [Part X] markers from nosleep series
+  remove_part_markers: true
+
+# TTS settings
+tts:
+  # Provider: "elevenlabs", "coqui", "bark"
+  provider: "coqui"
+  # ElevenLabs settings (if using elevenlabs provider)
+  elevenlabs:
+    api_key: "YOUR_ELEVENLABS_API_KEY"
+    voice_id: ""
+    model_id: "eleven_multilingual_v2"
+    stability: 0.5
+    similarity_boost: 0.75
+  # Coqui TTS settings (local, free)
+  coqui:
+    model_name: "tts_models/en/vctk/vits"
+    speaker: null
+    use_custom_voice: false
+    custom_voice_path: ""
+  # Audio output settings
+  output_format: "mp3"
+  sample_rate: 22050
+  bitrate: "192k"
+
+# Voice training settings
+voice_training:
+  # Directory containing voice sample recordings
+  samples_dir: "voice_samples"
+  # Minimum total duration of samples in seconds
+  min_total_duration: 120
+  # Output directory for trained model
+  model_output_dir: "trained_voices"
+  # Training epochs
+  epochs: 100
+  batch_size: 16
+
+# Database settings
+database:
+  path: "scarystory.db"
+
+# Output settings
+output:
+  base_dir: "output"
+  # Create category subdirectories
+  organize_by_category: true
+
+# Rate limiting
+rate_limit:
+  # Seconds between Reddit API calls
+  request_delay: 2.0
+  # Max stories to fetch per subreddit per run
+  max_per_subreddit: 25
+  # Max total stories per run
+  max_per_run: 100
+
+# Logging
+logging:
+  level: "INFO"
+  file: "scarystory.log"
