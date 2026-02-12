@@ -90,7 +90,9 @@ tts:
   # Coqui TTS settings (local, free)
   coqui:
     model_name: "tts_models/en/vctk/vits"
-    speaker: null
+    # Deep, calm British voice well-suited for narration.
+    # Other good options: "p317" (American male), "p330" (British, deep)
+    speaker: "p273"
     use_custom_voice: false
     custom_voice_path: ""
   # Audio output settings
