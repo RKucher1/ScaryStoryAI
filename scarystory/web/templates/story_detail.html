@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}{{ story.title[:50] }} - ScaryStoryAI{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>{{ story.title }}</h1>
+    <p><a href="{{ url_for('stories') }}">Stories</a> / {{ story.category or 'uncategorized' }}</p>
+</div>
+
+<div class="story-meta">
+    <div class="story-meta-item">
+        <span class="label">Subreddit:</span> r/{{ story.subreddit }}
+    </div>
+    <div class="story-meta-item">
+        <span class="label">Author:</span> {{ story.author or '[deleted]' }}
+    </div>
+    <div class="story-meta-item">
+        <span class="label">Score:</span> {{ "%.1f"|format(story.score or 0) }}
+    </div>
+    <div class="story-meta-item">
+        <span class="label">Upvotes:</span> {{ story.upvotes }}
+    </div>
+    <div class="story-meta-item">
+        <span class="label">Comments:</span> {{ story.comments }}
+    </div>
+    {% if story.url %}
+    <div class="story-meta-item">
+        <a href="{{ story.url }}" target="_blank" rel="noopener">View on Reddit</a>
+    </div>
+    {% endif %}
+</div>
+
+<div class="stats-grid" style="margin-bottom: 1.5rem;">
+    <div class="stat-card">
+        <div class="stat-value" style="font-size: 1.3rem;">
+            {% if story.is_audio_generated %}
+            <span class="badge badge-success">Audio Ready</span>
+            {% elif story.is_processed %}
+            <span class="badge badge-warning">Processed</span>
+            {% else %}
+            <span class="badge badge-muted">Scraped</span>
+            {% endif %}
+        </div>
+        <div class="stat-label">Status</div>
+    </div>
+    {% if metadata %}
+    <div class="stat-card">
+        <div class="stat-value" style="font-size: 1.3rem;">{{ metadata.get('word_count', '-') }}</div>
+        <div class="stat-label">Words</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" style="font-size: 1.3rem;">{{ metadata.get('chunk_count', '-') }}</div>
+        <div class="stat-label">Chunks</div>
+    </div>
+    {% if metadata.get('audio') %}
+    <div class="stat-card">
+        <div class="stat-value" style="font-size: 1.3rem;">{{ metadata.audio.total_duration_seconds }}s</div>
+        <div class="stat-label">Audio Duration</div>
+    </div>
+    {% endif %}
+    {% endif %}
+</div>
+
+{% if has_combined %}
+<div class="card">
+    <h3>Full Story Audio</h3>
+    <div class="audio-player">
+        <audio controls preload="metadata">
+            <source src="{{ url_for('serve_audio', filepath=story_dir + '/'+combined_audio_name) }}">
+            Your browser does not support audio playback.
+        </audio>
+    </div>
+</div>
+{% endif %}
+
+{% if audio_files %}
+<div class="card">
+    <h3>Audio Chapters</h3>
+    {% for audio_file in audio_files %}
+    <div class="audio-player">
+        <div class="audio-label">{{ audio_file.name }}</div>
+        <audio controls preload="metadata">
+            <source src="{{ url_for('serve_audio', filepath=audio_file|string) }}">
+        </audio>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if transcript %}
+<div class="card">
+    <h3>Transcript</h3>
+    <div class="transcript">{{ transcript }}</div>
+</div>
+{% endif %}
+
+{% if not transcript and not audio_files %}
+<div class="card">
+    <h3>Story Text (Raw)</h3>
+    <div class="transcript">{{ story.body[:3000] }}{% if story.body|length > 3000 %}...{% endif %}</div>
+</div>
+{% endif %}
+{% endblock %}

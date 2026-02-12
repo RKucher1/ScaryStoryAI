@@ -132,6 +132,18 @@ Examples:
         "--limit", type=int, default=20, help="Max stories to show"
     )
 
+    # Web dashboard command
+    web_parser = subparsers.add_parser("web", help="Launch web dashboard")
+    web_parser.add_argument(
+        "--host", type=str, default="127.0.0.1", help="Host to bind (default: 127.0.0.1)"
+    )
+    web_parser.add_argument(
+        "--port", type=int, default=5000, help="Port to bind (default: 5000)"
+    )
+    web_parser.add_argument(
+        "--debug", action="store_true", help="Enable debug mode"
+    )
+
     args = parser.parse_args()
 
     if not args.command:
@@ -151,6 +163,7 @@ Examples:
         "voice": _cmd_voice,
         "stats": _cmd_stats,
         "list": _cmd_list,
+        "web": _cmd_web,
     }
 
     handler = handlers.get(args.command)
@@ -290,6 +303,16 @@ def _cmd_list(config: dict, args: argparse.Namespace) -> None:
                 f"  [{story.get('score', 0):.1f}] {status} "
                 f"r/{story['subreddit']} - {story['title'][:55]}"
             )
+
+
+def _cmd_web(config: dict, args: argparse.Namespace) -> None:
+    """Handle the web dashboard command."""
+    from scarystory.web import create_app
+
+    app = create_app(config)
+    print(f"\nScaryStoryAI Dashboard: http://{args.host}:{args.port}")
+    print("Press Ctrl+C to stop.\n")
+    app.run(host=args.host, port=args.port, debug=args.debug)
 
 
 if __name__ == "__main__":

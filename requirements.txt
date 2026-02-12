@@ -2,6 +2,9 @@
 praw>=7.7.0
 pyyaml>=6.0
 
+# Web dashboard
+flask>=3.0.0
+
 # Text-to-Speech (install one or more providers)
 # Coqui TTS - free, local (recommended for getting started)
 TTS>=0.22.0

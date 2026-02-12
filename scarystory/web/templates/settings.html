@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Settings - ScaryStoryAI{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Settings</h1>
+    <p>Configure API credentials and TTS options</p>
+</div>
+
+<div class="card">
+    <h3>API Credentials</h3>
+    <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
+        Set credentials as environment variables. Values are stored in memory only
+        and not written to disk. For persistence, set them in your shell profile.
+    </p>
+    <form method="POST" action="{{ url_for('update_env') }}">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="reddit_client_id">Reddit Client ID</label>
+                <input type="text" id="reddit_client_id" name="reddit_client_id"
+                       value="{{ env_vars.REDDIT_CLIENT_ID }}"
+                       placeholder="Your Reddit app client ID">
+            </div>
+            <div class="form-group">
+                <label for="reddit_client_secret">Reddit Client Secret</label>
+                <input type="password" id="reddit_client_secret" name="reddit_client_secret"
+                       value="{{ env_vars.REDDIT_CLIENT_SECRET }}"
+                       placeholder="Your Reddit app client secret">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="reddit_username">Reddit Username (optional)</label>
+                <input type="text" id="reddit_username" name="reddit_username"
+                       value="{{ env_vars.REDDIT_USERNAME }}"
+                       placeholder="u/your_username">
+            </div>
+            <div class="form-group">
+                <label for="elevenlabs_api_key">ElevenLabs API Key (optional)</label>
+                <input type="password" id="elevenlabs_api_key" name="elevenlabs_api_key"
+                       value="{{ env_vars.ELEVENLABS_API_KEY }}"
+                       placeholder="Only needed for ElevenLabs TTS">
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Save Credentials</button>
+        <span class="form-help" style="margin-left: 0.75rem;">Stored in environment variables (memory only)</span>
+    </form>
+</div>
+
+<div class="card">
+    <h3>Text-to-Speech</h3>
+    <form method="POST" action="{{ url_for('update_tts') }}">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="tts_provider">TTS Provider</label>
+                <select id="tts_provider" name="tts_provider">
+                    <option value="coqui" {% if raw_config.get('tts', {}).get('provider') == 'coqui' %}selected{% endif %}>
+                        Coqui TTS (free, local)
+                    </option>
+                    <option value="elevenlabs" {% if raw_config.get('tts', {}).get('provider') == 'elevenlabs' %}selected{% endif %}>
+                        ElevenLabs (cloud, paid)
+                    </option>
+                    <option value="bark" {% if raw_config.get('tts', {}).get('provider') == 'bark' %}selected{% endif %}>
+                        Bark (free, local, GPU)
+                    </option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="coqui_speaker">Coqui Voice (VCTK speaker)</label>
+                <select id="coqui_speaker" name="coqui_speaker">
+                    {% set current_speaker = raw_config.get('tts', {}).get('coqui', {}).get('speaker', 'p273') %}
+                    <option value="p273" {% if current_speaker == 'p273' %}selected{% endif %}>p273 - British, warm (recommended)</option>
+                    <option value="p317" {% if current_speaker == 'p317' %}selected{% endif %}>p317 - American male</option>
+                    <option value="p330" {% if current_speaker == 'p330' %}selected{% endif %}>p330 - British, deep</option>
+                    <option value="p256" {% if current_speaker == 'p256' %}selected{% endif %}>p256 - American male</option>
+                    <option value="p287" {% if current_speaker == 'p287' %}selected{% endif %}>p287 - American male</option>
+                    <option value="p230" {% if current_speaker == 'p230' %}selected{% endif %}>p230 - Narrator style</option>
+                    <option value="p234" {% if current_speaker == 'p234' %}selected{% endif %}>p234 - Narrator style</option>
+                </select>
+                <div class="form-help">Only applies when using Coqui TTS provider</div>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Save TTS Settings</button>
+    </form>
+</div>
+
+<div class="card">
+    <h3>Current Configuration</h3>
+    <table>
+        <tr><th style="width: 250px;">Setting</th><th>Value</th></tr>
+        <tr><td>TTS Provider</td><td>{{ config.get('tts', {}).get('provider', 'coqui') }}</td></tr>
+        <tr><td>Coqui Speaker</td><td>{{ config.get('tts', {}).get('coqui', {}).get('speaker', 'null') }}</td></tr>
+        <tr><td>Output Format</td><td>{{ config.get('tts', {}).get('output_format', 'mp3') }}</td></tr>
+        <tr><td>Output Directory</td><td>{{ config.get('output', {}).get('base_dir', 'output') }}</td></tr>
+        <tr><td>Database Path</td><td>{{ config.get('database', {}).get('path', 'scarystory.db') }}</td></tr>
+        <tr><td>Reddit Client ID</td><td>{{ config.get('reddit', {}).get('client_id', 'Not set')[:20] }}{% if config.get('reddit', {}).get('client_id', '')|length > 20 %}...{% endif %}</td></tr>
+        <tr><td>Reddit Client Secret</td><td>{{ config.get('reddit', {}).get('client_secret', 'Not set') }}</td></tr>
+        <tr><td>Max Per Subreddit</td><td>{{ config.get('rate_limit', {}).get('max_per_subreddit', 25) }}</td></tr>
+        <tr><td>Max Per Run</td><td>{{ config.get('rate_limit', {}).get('max_per_run', 100) }}</td></tr>
+        <tr><td>Chunk Max Words</td><td>{{ config.get('processing', {}).get('chunk_max_words', 800) }}</td></tr>
+    </table>
+</div>
+{% endblock %}

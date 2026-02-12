@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}Pipeline - ScaryStoryAI{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Pipeline Controls</h1>
+    <p>Run scraping, processing, and audio generation</p>
+</div>
+
+<div class="card">
+    <h3>Run Pipeline</h3>
+    <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
+        Pipeline stages run in the background. You can continue browsing while they execute.
+    </p>
+
+    <div class="pipeline-actions">
+        <form method="POST" action="{{ url_for('pipeline_run') }}" style="display:inline">
+            <input type="hidden" name="action" value="scrape">
+            <button type="submit" class="btn">
+                Scrape
+            </button>
+        </form>
+
+        <form method="POST" action="{{ url_for('pipeline_run') }}" style="display:inline">
+            <input type="hidden" name="action" value="process">
+            <button type="submit" class="btn">
+                Process Text
+            </button>
+        </form>
+
+        <form method="POST" action="{{ url_for('pipeline_run') }}" style="display:inline">
+            <input type="hidden" name="action" value="audio">
+            <button type="submit" class="btn">
+                Generate Audio
+            </button>
+        </form>
+
+        <form method="POST" action="{{ url_for('pipeline_run') }}" style="display:inline">
+            <input type="hidden" name="action" value="run">
+            <button type="submit" class="btn btn-primary">
+                Run Full Pipeline
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Pipeline Stages</h3>
+    <table>
+        <tr>
+            <td><strong>1. Scrape</strong></td>
+            <td>Fetch stories from Reddit via API. Applies content filtering and deduplication.</td>
+        </tr>
+        <tr>
+            <td><strong>2. Process</strong></td>
+            <td>Clean markdown, expand abbreviations, chunk text for TTS. Generates transcripts.</td>
+        </tr>
+        <tr>
+            <td><strong>3. Audio</strong></td>
+            <td>Convert text chunks to speech, then concatenate into a single story audio file.</td>
+        </tr>
+        <tr>
+            <td><strong>Full Pipeline</strong></td>
+            <td>Runs all three stages in sequence.</td>
+        </tr>
+    </table>
+</div>
+
+<div class="card" id="job-history">
+    <h3>Job History</h3>
+    {% if jobs %}
+    <div class="job-list">
+        {% for job_id, job in jobs.items()|reverse %}
+        <div class="job-item">
+            <div>
+                <strong>{{ job.action }}</strong>
+                <span style="color: var(--text-muted); margin-left: 0.5rem;">{{ job.started_at }}</span>
+            </div>
+            <div>
+                {% if job.status == 'running' %}
+                <span class="badge badge-warning">Running</span>
+                {% elif job.status == 'completed' %}
+                <span class="badge badge-success">Completed</span>
+                {% elif job.status == 'failed' %}
+                <span class="badge badge-error">Failed</span>
+                {% endif %}
+                {% if job.result %}
+                <span style="color: var(--text-secondary); margin-left: 0.5rem; font-size: 0.85rem;">{{ job.result }}</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p style="color: var(--text-muted); padding: 1rem 0;">No jobs have been run yet.</p>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Auto-refresh job status if there are running jobs
+(function() {
+    function checkJobs() {
+        fetch("{{ url_for('pipeline_status') }}")
+            .then(r => r.json())
+            .then(jobs => {
+                const hasRunning = Object.values(jobs).some(j => j.status === "running");
+                if (hasRunning) {
+                    setTimeout(checkJobs, 3000);
+                } else {
+                    // Reload to show final status
+                    location.reload();
+                }
+            })
+            .catch(() => setTimeout(checkJobs, 5000));
+    }
+
+    const hasRunning = {{ 'true' if jobs and jobs.values()|selectattr('status', 'equalto', 'running')|list else 'false' }};
+    if (hasRunning) {
+        setTimeout(checkJobs, 3000);
+    }
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Stories - ScaryStoryAI{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Stories</h1>
+    <p>Browse and filter scraped stories</p>
+</div>
+
+<div class="filter-bar">
+    <a href="{{ url_for('stories') }}"
+       class="filter-btn {% if not selected_category %}active{% endif %}">All</a>
+    {% for cat in categories %}
+    <a href="{{ url_for('stories', category=cat) }}"
+       class="filter-btn {% if selected_category == cat %}active{% endif %}">{{ cat }}</a>
+    {% endfor %}
+</div>
+
+<div class="card">
+    <table>
+        <thead>
+            <tr>
+                <th>Score</th>
+                <th>Title</th>
+                <th>Subreddit</th>
+                <th>Category</th>
+                <th>Upvotes</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for story in stories %}
+            <tr>
+                <td>{{ "%.1f"|format(story.score or 0) }}</td>
+                <td><a href="{{ url_for('story_detail', story_id=story.id) }}">{{ story.title[:65] }}</a></td>
+                <td>r/{{ story.subreddit }}</td>
+                <td><span class="badge badge-info">{{ story.category or '-' }}</span></td>
+                <td>{{ story.upvotes }}</td>
+                <td>
+                    {% if story.is_audio_generated %}
+                    <span class="badge badge-success">Audio</span>
+                    {% elif story.is_processed %}
+                    <span class="badge badge-warning">Text</span>
+                    {% else %}
+                    <span class="badge badge-muted">Raw</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if not stories %}
+    <p style="color: var(--text-muted); padding: 2rem; text-align: center;">
+        No stories found. {% if selected_category %}Try a different category or {% endif %}
+        <a href="{{ url_for('pipeline') }}">run the scraper</a> to fetch new stories.
+    </p>
+    {% endif %}
+</div>
+{% endblock %}

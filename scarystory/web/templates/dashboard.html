@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - ScaryStoryAI{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Dashboard</h1>
+    <p>Overview of your story pipeline</p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-value">{{ stats.get('total', 0) }}</div>
+        <div class="stat-label">Total Stories</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ stats.get('processed', 0) or 0 }}</div>
+        <div class="stat-label">Processed</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ stats.get('audio_generated', 0) or 0 }}</div>
+        <div class="stat-label">Audio Generated</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ stats.get('subreddits', 0) or 0 }}</div>
+        <div class="stat-label">Subreddits</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ stats.get('categories', 0) or 0 }}</div>
+        <div class="stat-label">Categories</div>
+    </div>
+</div>
+
+{% if active_jobs %}
+<div class="card">
+    <h3>Active Jobs</h3>
+    {% for job_id, job in active_jobs.items() %}
+    <div class="job-item">
+        <span><span class="badge badge-warning">Running</span> {{ job.action }} - started {{ job.started_at }}</span>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="card">
+    <h3>Quick Actions</h3>
+    <div class="pipeline-actions">
+        <form method="POST" action="{{ url_for('pipeline_run') }}" style="display:inline">
+            <input type="hidden" name="action" value="scrape">
+            <button type="submit" class="btn btn-primary">Scrape New Stories</button>
+        </form>
+        <form method="POST" action="{{ url_for('pipeline_run') }}" style="display:inline">
+            <input type="hidden" name="action" value="run">
+            <button type="submit" class="btn">Run Full Pipeline</button>
+        </form>
+        <a href="{{ url_for('stories') }}" class="btn">Browse Stories</a>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Recent Stories</h3>
+    {% if recent_stories %}
+    <table>
+        <thead>
+            <tr>
+                <th>Score</th>
+                <th>Title</th>
+                <th>Subreddit</th>
+                <th>Category</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for story in recent_stories %}
+            <tr>
+                <td>{{ "%.1f"|format(story.score or 0) }}</td>
+                <td><a href="{{ url_for('story_detail', story_id=story.id) }}">{{ story.title[:60] }}</a></td>
+                <td>r/{{ story.subreddit }}</td>
+                <td><span class="badge badge-info">{{ story.category or 'uncategorized' }}</span></td>
+                <td>
+                    {% if story.is_audio_generated %}
+                    <span class="badge badge-success">Audio Ready</span>
+                    {% elif story.is_processed %}
+                    <span class="badge badge-warning">Processed</span>
+                    {% else %}
+                    <span class="badge badge-muted">Scraped</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color: var(--text-muted); padding: 1rem 0;">No stories yet. Run the scraper to get started.</p>
+    {% endif %}
+</div>
+{% endblock %}
